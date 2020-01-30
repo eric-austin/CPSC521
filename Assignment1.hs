@@ -2,7 +2,6 @@
 --30037742
 --CPSC 521 Assignment 1
 
-
 --------------------------------------------------------------------------------
 --Question 1
 --code for app given in lecture notes
@@ -61,6 +60,7 @@ lexOrd xs [] = True
 lexOrd (x:xs) (y:ys) | x > y = True
                      | x < y = False
                      | otherwise = lexOrd xs ys
+
 
 --------------------------------------------------------------------------------
 --Question 5
@@ -127,5 +127,39 @@ relgrp rel (x:xs) ys = (x, [y | y <- ys, rel x y]):(relgrp rel xs ys)
 
 --------------------------------------------------------------------------------
 --Question 9
+nbr :: (Integral a) => a -> a -> Bool
+nbr x y | abs (x - y) <= 2 = True
+        | otherwise = False
+
+subgroup :: (a -> a -> Bool) -> [a] -> [a]
+subgroup _ [] = []
+subgroup _ [x] = [x]
+subgroup pr (x:xs) | pr x (head xs) = [x] ++ (subgroup pr xs)
+                   | otherwise = [x]
+
 group :: (a -> a -> Bool) -> [a] -> [[a]]
-group [] = []
+group _ [] = []
+group pr xs = ys:(group pr (drop (length ys) xs))
+    where ys = subgroup pr xs
+
+
+--------------------------------------------------------------------------------
+--Question 10
+subset :: [a] -> [[a]]
+subset xs = foldr (\x acc -> (map (x:) acc) ++ acc) [[]] xs
+
+
+--------------------------------------------------------------------------------
+--Question 11
+perm :: [a] -> [[a]]
+perm xs = foldr (\x acc -> (removeLayer(map (insert x) acc))) [[]] xs
+
+removeLayer :: [[[a]]] -> [[a]]
+removeLayer xs = foldr (\x acc -> x ++ acc) [] xs
+
+insert :: a -> [a] -> [[a]]
+insert x [] = [[x]]
+insert x (y:ys) = [(x:y:ys)] ++ (map (y:) (insert x ys))
+
+--------------------------------------------------------------------------------
+--Question 12
