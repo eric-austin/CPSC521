@@ -163,3 +163,29 @@ insert x (y:ys) = [(x:y:ys)] ++ (map (y:) (insert x ys))
 
 --------------------------------------------------------------------------------
 --Question 12
+cycDecomp :: (Eq a) => [a] -> [[[a]]]
+cycDecomp xs = map (\ts -> buildCycles [] ts ts) (map (zip xs) (perm xs))
+
+alreadyInCycle :: (Eq a) => a -> [a] -> Bool
+alreadyInCycle _ [] = False
+alreadyInCycle x (y:ys) | x == y = True
+                        | otherwise = alreadyInCycle x ys
+
+alreadyInAnyCycle :: (Eq a) => a -> [[a]] -> Bool
+alreadyInAnyCycle _ [] = False
+alreadyInAnyCycle x (y:ys) = (alreadyInCycle x y) || (alreadyInAnyCycle x ys)
+
+nextTuple :: (Eq a) => (a, a) -> [(a, a)] -> (a, a)
+nextTuple (x, y) [] = (x, y)
+nextTuple (x, y) ((u, v):ls) | y == u = (u, v)
+                             | otherwise = nextTuple (x, y) ls
+
+buildCycles :: (Eq a) => [[a]] -> [(a, a)] -> [(a, a)] -> [[a]]
+buildCycles cycs _ [] = cycs
+buildCycles cycs [] _ = cycs
+buildCycles cycs ((x, y):zs) ls | alreadyInAnyCycle x cycs = buildCycles cycs zs ls
+                                | otherwise = buildCycles ((buildCycle [] (x, y) ls):cycs) zs ls
+
+buildCycle :: (Eq a) => [a] -> (a, a) -> [(a, a)] -> [a]
+buildCycle cyc (x, y) zs | alreadyInCycle x cyc = cyc
+                         | otherwise = buildCycle (cyc ++ [x]) (nextTuple (x, y) zs) zs
