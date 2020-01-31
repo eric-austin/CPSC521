@@ -61,6 +61,13 @@ lexOrd (x:xs) (y:ys) | x > y = True
                      | x < y = False
                      | otherwise = lexOrd xs ys
 
+lexOrd' :: (Ord a) => List a -> List a -> Bool
+lexOrd' Empty _ = False
+lexOrd' _ Empty = True
+lexOrd' (Cons x xs) (Cons y ys) | x > y = True
+                               | x < y = False
+                               |otherwise = lexOrd' xs ys
+
 
 --------------------------------------------------------------------------------
 --Question 5
@@ -189,3 +196,65 @@ buildCycles cycs ((x, y):zs) ls | alreadyInAnyCycle x cycs = buildCycles cycs zs
 buildCycle :: (Eq a) => [a] -> (a, a) -> [(a, a)] -> [a]
 buildCycle cyc (x, y) zs | alreadyInCycle x cyc = cyc
                          | otherwise = buildCycle (cyc ++ [x]) (nextTuple (x, y) zs) zs
+
+
+--------------------------------------------------------------------------------
+--Question 15
+polysplit :: [(Float, [Int])] -> ([(Float, [Int])], [(Float, [Int])])
+polysplit [] = ([], [])
+polysplit [x] = ([x], [])
+polysplit (x:xs) = (smaller, bigger)
+    where smaller = [y | y <- xs, lexOrd (snd x) (snd y)]
+          bigger = [y | y <- xs, not(lexOrd (snd x) (snd y))]
+
+polyquicksort :: [(Float, [Int])] -> [(Float, [Int])]
+polyquicksort [] = []
+polyquicksort [x] = [x]
+polyquicksort (x:xs) = polyquicksort(fst (polysplit (x:xs))) ++ [x] ++ polyquicksort(snd (polysplit (x:xs)))
+
+addTerms :: (Float,[Int]) -> (Float,[Int]) -> (Float,[Int])
+addTerms (x, xs) (y, ys) = (x + y, xs)
+
+multTerms :: (Float,[Int]) -> (Float,[Int]) -> (Float,[Int])
+multTerms (x, xs) (y, ys) = (x * y, (addpowers xs ys))
+    where addpowers ms [] = ms
+          addpowers [] ns = ns
+          addpowers (m:ms) (n:ns) = (m + n):(addpowers ms ns)
+
+combineTerms :: [(Float,[Int])] -> [(Float,[Int])]
+combineTerms [] = []
+combineTerms [t] = [t]
+combineTerms (t:ts) | (snd t) == (snd (head ts)) = combineTerms ((addTerms t (head ts)):(tail ts))
+                    | otherwise =  (t:(combineTerms ts))
+
+normpoly :: [(Float,[Int])] -> [(Float,[Int])]
+normpoly [] =[]
+normpoly [x] = [x]
+normpoly xs = combineTerms (polyquicksort xs)
+
+addnormpoly :: [(Float,[Int])]  -> [(Float,[Int])] -> [(Float,[Int])]
+addnormpoly [] ys = ys
+addnormpoly xs [] = xs
+addnormpoly (x:xs) (y:ys) | (snd x) < (snd y) = x:(addnormpoly xs (y:ys))
+                          | (snd x) > (snd y) = y:(addnormpoly (x:xs) ys)
+                          | otherwise = (addTerms x y):(addnormpoly xs ys)
+
+addpoly :: [(Float,[Int])]  -> [(Float,[Int])] -> [(Float,[Int])]
+addpoly xs ys = addnormpoly (normpoly xs) (normpoly ys)
+
+multpoly :: [(Float,[Int])]  -> [(Float,[Int])] -> [(Float,[Int])]
+multpoly [] ys = ys
+multpoly xs [] = xs
+multpoly xs ys = normpoly (multpoly' xs ys)
+    where multpoly' xs [] = xs
+          multpoly' [] ys = []
+          multpoly' (x:xs) ys = (map (multTerms x) ys) ++ (multpoly' xs ys)
+
+
+--------------------------------------------------------------------------------
+--Question 19
+data Rose a = RS [(a,Rose a)]
+
+width:: Rose Int -> Int
+width (RS []) = 0
+width (RS xs) = foldr (\(x, rose) acc -> if (x + (width rose)) > acc then (x + width rose) else acc) 0 xs
